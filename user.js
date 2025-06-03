@@ -115,7 +115,8 @@ app.post('/login', async (req, res) => {
       user: {
         maNguoiDung: user.maNguoiDung,
         tenDangNhap: user.tenDangNhap,
-        email: user.email
+        email: user.email,
+        role: user.role
       }
     });
 
