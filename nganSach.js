@@ -14,10 +14,10 @@ app.use(express.json());
 
 // Kết nối database MySQL
 const db = mysql.createConnection({
-  host: '127.0.0.1',      // thay bằng host của bạn
-  user: 'root',           // thay bằng user của bạn
-  password: '1234',       // thay bằng mật khẩu
-  database: 'thuchi'      // thay bằng tên database
+  host: 'sql12.freesqldatabase.com',  // host FreeSQL
+  user: 'sql12808282',                // username FreeSQL
+  password: 'mật khẩu bạn nhận trong email',  // password FreeSQL
+  database: 'sql12808282'             // database name trên FreeSQL
 });
 
 db.connect(err => {

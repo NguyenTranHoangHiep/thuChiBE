@@ -22,10 +22,10 @@ let db;
 async function connectDB() {
   try {
     db = await mysql.createConnection({
-      host: '127.0.0.1',
-      user: 'root',
-      password: '1234',
-      database: 'thuchi'
+    host: 'sql12.freesqldatabase.com',  // host FreeSQL
+    user: 'sql12808282',                // username FreeSQL
+    password: 'mật khẩu bạn nhận trong email',  // password FreeSQL
+    database: 'sql12808282'             // database name trên FreeSQL
     });
     console.log('✅ Đã kết nối tới MySQL');
   } catch (err) {
