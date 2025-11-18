@@ -1,7 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2');
 const app = express();
-const port = 7000;
+const port = process.env.PORT || 7000;
 const cors = require('cors');
 
 // Middleware parse JSON
