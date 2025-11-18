@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "concurrently \"node danhMuc.js\" \"node giaoDich.js\" \"node nganSach.js\" \"node user.js\""
+    "start": "concurrently \"node danhMuc.js\""
   },
   "author": "",
   "license": "ISC",
