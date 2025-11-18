@@ -13,11 +13,11 @@ app.use(cors({
 app.use(express.json());
 
 // Kết nối database MySQL
-const db = mysql.createPool({
-  host: 'sql12.freesqldatabase.com',
-  user: 'sql12808282',
-  password: 'ssJaXSuIdK',
-  database: 'sql12808282'
+const db = mysql.createConnection({
+  host: 'sql12.freesqldatabase.com',  // host FreeSQL
+  user: 'sql12808282',                // username FreeSQL
+  password: 'ssJaXSuIdK',  // password FreeSQL
+  database: 'sql12808282'             // database name trên FreeSQL
 });
 
 db.connect(err => {
