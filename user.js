@@ -24,7 +24,7 @@ async function connectDB() {
     db = await mysql.createConnection({
     host: 'sql12.freesqldatabase.com',  // host FreeSQL
     user: 'sql12808282',                // username FreeSQL
-    password: 'mật khẩu bạn nhận trong email',  // password FreeSQL
+    password: 'ssJaXSuIdK',  // password FreeSQL
     database: 'sql12808282'             // database name trên FreeSQL
     });
     console.log('✅ Đã kết nối tới MySQL');
