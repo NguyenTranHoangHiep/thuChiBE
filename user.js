@@ -21,7 +21,7 @@ app.use(express.json());
 let db;
 async function connectDB() {
   try {
-    db = await mysql.createConnection({
+    db = await mysql.createPool({
     host: 'sql12.freesqldatabase.com',  // host FreeSQL
     user: 'sql12808282',                // username FreeSQL
     password: 'ssJaXSuIdK',  // password FreeSQL
