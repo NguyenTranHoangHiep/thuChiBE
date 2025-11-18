@@ -576,6 +576,145 @@ app.get('/users/check-email/:email', async (req, res) => {
 });
 
 
+// ================== API NGÂN SÁCH ==================
+// Lấy danh sách tất cả ngân sách
+app.get('/ngansach/thongke', async (req, res) => {
+  try {
+    const sql = `
+      SELECT 
+        dm.tenDanhMuc,
+        ns.gioiHanTien,
+        IFNULL(SUM(gd.soTien), 0) AS soTienDaThucHien,
+        DATE_FORMAT(MIN(gd.ngayGiaoDich), '%Y-%m-%d') AS ngayTao,
+        ns.thang,
+        ns.nam
+      FROM ngansach ns
+      JOIN danhmuc dm ON ns.maDanhMuc = dm.maDanhMuc
+      LEFT JOIN giaodich gd 
+        ON gd.maDanhMuc = ns.maDanhMuc 
+        AND MONTH(gd.ngayGiaoDich) = ns.thang 
+        AND YEAR(gd.ngayGiaoDich) = ns.nam
+      GROUP BY ns.maDanhMuc, ns.thang, ns.nam;
+    `;
+    const [results] = await db.query(sql);
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Lấy thống kê ngân sách theo người dùng
+app.get('/ngansach/thongke/:id', async (req, res) => {
+  const maNguoiDung = req.params.id;
+  if (!maNguoiDung) return res.status(400).json({ error: 'Thiếu mã người dùng (maNguoiDung)' });
+
+  try {
+    const sql = `
+      SELECT 
+        ns.maNganSach,
+        dm.tenDanhMuc,
+        dm.loai,
+        ns.gioiHanTien,
+        IFNULL(SUM(gd.soTien), 0) AS soTienDaThucHien,
+        ns.ngayTao,
+        ns.thang,
+        ns.nam
+      FROM ngansach ns
+      JOIN danhmuc dm ON ns.maDanhMuc = dm.maDanhMuc
+      LEFT JOIN giaodich gd 
+        ON gd.maDanhMuc = ns.maDanhMuc
+        AND YEAR(gd.ngayGiaoDich) = ns.nam
+        AND gd.maNguoiDung = ns.maNguoiDung
+        AND (ns.thang IS NULL OR MONTH(gd.ngayGiaoDich) = ns.thang)
+      WHERE ns.maNguoiDung = ?
+      GROUP BY ns.maNganSach, dm.tenDanhMuc, dm.loai, ns.gioiHanTien, ns.ngayTao, ns.thang, ns.nam;
+    `;
+    const [results] = await db.query(sql, [maNguoiDung]);
+    res.json(results);
+  } catch (err) {
+    console.error('Lỗi truy vấn thống kê ngân sách:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Lấy chi tiết ngân sách theo maNganSach
+app.get('/ngansach/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [results] = await db.query('SELECT * FROM ngansach WHERE maNganSach = ?', [id]);
+    if (results.length === 0) return res.status(404).json({ message: 'Không tìm thấy ngân sách' });
+    res.json(results[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Thêm ngân sách
+app.post('/ngansach', async (req, res) => {
+  const { maNguoiDung, maDanhMuc, gioiHanTien, thang, nam } = req.body;
+  if (!maNguoiDung || !maDanhMuc || !gioiHanTien || !nam) {
+    return res.status(400).json({ message: 'maNguoiDung, maDanhMuc, gioiHanTien và nam là bắt buộc' });
+  }
+
+  try {
+    let sqlCheck, params;
+    if (thang) {
+      sqlCheck = `SELECT * FROM ngansach WHERE maNguoiDung = ? AND maDanhMuc = ? AND thang = ? AND nam = ?`;
+      params = [maNguoiDung, maDanhMuc, thang, nam];
+    } else {
+      sqlCheck = `SELECT * FROM ngansach WHERE maNguoiDung = ? AND maDanhMuc = ? AND thang IS NULL AND nam = ?`;
+      params = [maNguoiDung, maDanhMuc, nam];
+    }
+
+    const [nsResults] = await db.query(sqlCheck, params);
+    if (nsResults.length > 0) return res.status(409).json({ message: 'Ngân sách đã tồn tại cho danh mục và thời gian này' });
+
+    const sqlInsert = `INSERT INTO ngansach (maNguoiDung, maDanhMuc, gioiHanTien, thang, nam) VALUES (?, ?, ?, ?, ?)`;
+    const [result] = await db.query(sqlInsert, [maNguoiDung, maDanhMuc, gioiHanTien, thang || null, nam]);
+    res.status(201).json({ message: 'Ngân sách được tạo thành công', maNganSach: result.insertId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Cập nhật ngân sách
+app.put('/ngansach/:maNganSach', async (req, res) => {
+  const { maNganSach } = req.params;
+  const { gioiHanTien, thang, nam, tenDanhMuc } = req.body;
+
+  if (!gioiHanTien || !nam || !tenDanhMuc) return res.status(400).json({ message: 'gioiHanTien, nam và tenDanhMuc là bắt buộc' });
+
+  try {
+    const [dmResults] = await db.query('SELECT maDanhMuc FROM danhMuc WHERE tenDanhMuc = ?', [tenDanhMuc]);
+    if (dmResults.length === 0) return res.status(404).json({ message: 'Danh mục không tồn tại' });
+
+    const maDanhMuc = dmResults[0].maDanhMuc;
+    const sqlUpdate = `
+      UPDATE ngansach 
+      SET gioiHanTien = ?, thang = ?, nam = ?, maDanhMuc = ?
+      WHERE maNganSach = ?
+    `;
+    const [result] = await db.query(sqlUpdate, [gioiHanTien, thang || null, nam, maDanhMuc, maNganSach]);
+    if (result.affectedRows === 0) return res.status(404).json({ message: 'Không tìm thấy ngân sách để cập nhật' });
+
+    res.status(200).json({ message: 'Cập nhật ngân sách thành công' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Xóa ngân sách
+app.delete('/ngansach/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [result] = await db.query('DELETE FROM ngansach WHERE maNganSach = ?', [id]);
+    if (result.affectedRows === 0) return res.status(404).json({ message: 'Ngân sách không tồn tại' });
+    res.json({ message: 'Ngân sách đã bị xóa' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ================== START SERVER ==================
 app.listen(port, () => {
   console.log(`Server đang chạy tại port ${port}`);
