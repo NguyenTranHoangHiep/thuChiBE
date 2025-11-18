@@ -412,6 +412,7 @@ app.get('/admin/thongke-thang-he-thong', async (req, res) => {
 });
 
 
+
 // ================== API USERS ==================
 app.get('/users', async (req, res) => {
   try {
@@ -504,6 +505,76 @@ app.put('/users/:id', async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+//sua qlUser admin
+app.put('/admin/:id', async (req, res) => {
+  console.log('PUT /admin/:id', req.params, req.body);
+  try {
+    const { id } = req.params;
+    const { tenDangNhap, email, role } = req.body;
+
+    if (!tenDangNhap || role === undefined) {
+      return res.status(400).json({ message: 'tenDangNhap và role là bắt buộc' });
+    }
+
+    const sql = 'UPDATE users SET tenDangNhap = ?, email = ?, role = ? WHERE maNguoiDung = ?';
+    const [result] = await db.execute(sql, [tenDangNhap, email, role, id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'User không tồn tại' });
+    }
+
+    res.json({ message: 'User đã được cập nhật' });
+  } catch (error) {
+    console.error('❌ Lỗi khi cập nhật user:', error);
+    res.status(500).json({ error: 'Lỗi server khi cập nhật user' });
+  }
+});
+
+// API: Xóa user theo maNguoiDung
+app.delete('/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sql = 'DELETE FROM users WHERE maNguoiDung = ?';
+    const [result] = await db.execute(sql, [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'User không tồn tại' });
+    }
+
+    res.json({ message: 'User đã được xóa' });
+  } catch (error) {
+    console.error('❌ Lỗi khi xóa user:', error);
+    res.status(500).json({ error: 'Lỗi server khi xóa user' });
+  }
+});
+// Kiểm tra tên đăng nhập tồn tại chưa
+app.get('/users/check-username/:tenDangNhap', async (req, res) => {
+  try {
+    const { tenDangNhap } = req.params;
+
+    const [rows] = await db.execute('SELECT 1 FROM users WHERE tenDangNhap = ? LIMIT 1', [tenDangNhap]);
+
+    res.json({ exists: rows.length > 0 });
+  } catch (error) {
+    console.error('❌ Lỗi khi kiểm tra tên đăng nhập:', error);
+    res.status(500).json({ error: 'Lỗi server khi kiểm tra tên đăng nhập' });
+  }
+});
+
+// Kiểm tra email tồn tại chưa
+app.get('/users/check-email/:email', async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    const [rows] = await db.execute('SELECT 1 FROM users WHERE email = ? LIMIT 1', [email]);
+
+    res.json({ exists: rows.length > 0 });
+  } catch (error) {
+    console.error('❌ Lỗi khi kiểm tra email:', error);
+    res.status(500).json({ error: 'Lỗi server khi kiểm tra email' });
+  }
+});
+
 
 // ================== START SERVER ==================
 app.listen(port, () => {
