@@ -1,32 +1,27 @@
+// nganSach.js
 const express = require('express');
-const mysql = require('mysql2');
-const app = express();
-const port = process.env.PORT || 7000;
+const mysql = require('mysql2/promise');
 const cors = require('cors');
 
-// Middleware parse JSON
-app.use(cors({
-  origin: '*',  // Cho phép frontend Angular gọi API
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Các phương thức cho phép
-  credentials: true, // Nếu bạn cần gửi cookie
-}));
+const app = express();
+const port = process.env.PORT || 7000;
+
+app.use(cors({ origin: '*', methods: ['GET','POST','PUT','DELETE'], credentials: true }));
 app.use(express.json());
 
-// Kết nối database MySQL
-const db = mysql.createConnection({
+// Pool MySQL
+const db = mysql.createPool({
   host: 'sql12.freesqldatabase.com',
   user: 'sql12808282',
   password: 'ssJaXSuIdK',
-  database: 'sql12808282'
+  database: 'sql12808282',
+  waitForConnections: true,
+  connectionLimit: 10
 });
 
-db.connect(err => {
-  if (err) {
-    console.error('Kết nối DB lỗi:', err);
-    return;
-  }
-  console.log('Đã kết nối tới MySQL');
-});
+console.log('✅ Pool MySQL đã sẵn sàng');
+
+// ----------------- API -----------------
 
 // Lấy danh sách tất cả ngân sách
 app.get('/ngansach/thongke', (req, res) => {

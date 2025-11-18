@@ -1,32 +1,26 @@
 const express = require('express');
-const mysql = require('mysql2');
-const app = express();
-const port = process.env.PORT || 5000;
+const mysql = require('mysql2/promise');
 const cors = require('cors');
 
-app.use(cors({
-  origin: '*',  // Chỉ cho phép frontend Angular gọi API
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Các phương thức cho phép
-  credentials: true, // Nếu bạn cần gửi cookie
-}));
-// Middleware parse JSON
+const app = express();
+const port = process.env.PORT || 5000;
+
+app.use(cors({ origin: '*', methods: ['GET','POST','PUT','DELETE'], credentials: true }));
 app.use(express.json());
 
-// Kết nối database MySQL
-const db = mysql.createConnection({
-  host: 'sql12.freesqldatabase.com',  // host FreeSQL
-  user: 'sql12808282',                // username FreeSQL
-  password: 'ssJaXSuIdK',  // password FreeSQL
-  database: 'sql12808282'             // database name trên FreeSQL
+// Pool MySQL (dùng chung cho tất cả kết nối)
+const db = mysql.createPool({
+  host: 'sql12.freesqldatabase.com',
+  user: 'sql12808282',
+  password: 'ssJaXSuIdK',
+  database: 'sql12808282',
+  waitForConnections: true,
+  connectionLimit: 10
 });
 
-db.connect(err => {
-  if (err) {
-    console.error('Kết nối DB lỗi:', err);
-    return;
-  }
-  console.log('Đã kết nối tới MySQL');
-});
+console.log('✅ Pool MySQL giao dịch sẵn sàng');
+
+// ---------------- API giao dịch ----------------
 // Lấy tất cả giao dịch
 // Lấy giao dịch theo người dùng
 app.get('/giaodich', (req, res) => {
