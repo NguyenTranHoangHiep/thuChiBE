@@ -677,46 +677,51 @@ app.post('/ngansach', async (req, res) => {
   }
 });
 
+
+// Cập nhật ngân sách theo maNganSach
 app.put('/ngansach/:maNganSach', async (req, res) => {
   const { maNganSach } = req.params;
   let { gioiHanTien, thang, nam, tenDanhMuc } = req.body;
 
-  console.log('PUT /ngansach/:maNganSach', req.body);
-
-  if (!gioiHanTien || !nam || !tenDanhMuc) {
-    return res.status(400).json({ message: 'gioiHanTien, nam và tenDanhMuc là bắt buộc' });
-  }
-
-  gioiHanTien = Number(gioiHanTien);
-  nam = Number(nam);
-  thang = thang != null ? Number(thang) : null;
-
-  if (isNaN(gioiHanTien) || isNaN(nam) || (thang !== null && isNaN(thang))) {
-    return res.status(400).json({ message: 'gioiHanTien, nam, thang phải là số hợp lệ' });
-  }
-
   try {
-    const [dmResults] = await db.query(
-      'SELECT maDanhMuc FROM danhMuc WHERE tenDanhMuc = ?',
-      [tenDanhMuc.trim()]
-    );
-    if (dmResults.length === 0) return res.status(404).json({ message: 'Danh mục không tồn tại' });
+    // Validate dữ liệu bắt buộc
+    if (!gioiHanTien || !nam || !tenDanhMuc) {
+      return res.status(400).json({ message: 'gioiHanTien, nam và tenDanhMuc là bắt buộc' });
+    }
 
+    // Trim khoảng trắng và ép kiểu
+    tenDanhMuc = tenDanhMuc.trim();
+    gioiHanTien = Number(gioiHanTien);
+    nam = Number(nam);
+    thang = thang != null ? Number(thang) : null;
+
+    if (isNaN(gioiHanTien) || isNaN(nam) || (thang !== null && isNaN(thang))) {
+      return res.status(400).json({ message: 'gioiHanTien, nam, thang phải là số hợp lệ' });
+    }
+
+    // Lấy maDanhMuc từ tên danh mục
+    const [dmResults] = await db.query('SELECT maDanhMuc FROM danhmuc WHERE tenDanhMuc = ?', [tenDanhMuc]);
+    if (dmResults.length === 0) {
+      return res.status(404).json({ message: 'Danh mục không tồn tại' });
+    }
     const maDanhMuc = dmResults[0].maDanhMuc;
 
+    // Cập nhật ngân sách
     const sqlUpdate = `
-      UPDATE ngansach
+      UPDATE ngansach 
       SET gioiHanTien = ?, thang = ?, nam = ?, maDanhMuc = ?
       WHERE maNganSach = ?
     `;
     const [result] = await db.query(sqlUpdate, [gioiHanTien, thang, nam, maDanhMuc, maNganSach]);
 
-    if (result.affectedRows === 0) return res.status(404).json({ message: 'Không tìm thấy ngân sách để cập nhật' });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Không tìm thấy ngân sách để cập nhật' });
+    }
 
     res.status(200).json({ message: 'Cập nhật ngân sách thành công' });
   } catch (err) {
-    console.error('Lỗi cập nhật ngân sách:', err); // log lỗi chi tiết
-    res.status(500).json({ message: 'Lỗi server, vui lòng thử lại sau' });
+    console.error('Lỗi cập nhật ngân sách:', err);
+    res.status(500).json({ message: 'Lỗi server, vui lòng thử lại' });
   }
 });
 
