@@ -677,31 +677,49 @@ app.post('/ngansach', async (req, res) => {
   }
 });
 
-// Cập nhật ngân sách
 app.put('/ngansach/:maNganSach', async (req, res) => {
   const { maNganSach } = req.params;
-  const { gioiHanTien, thang, nam, tenDanhMuc } = req.body;
+  let { gioiHanTien, thang, nam, tenDanhMuc } = req.body;
 
-  if (!gioiHanTien || !nam || !tenDanhMuc) return res.status(400).json({ message: 'gioiHanTien, nam và tenDanhMuc là bắt buộc' });
+  console.log('PUT /ngansach/:maNganSach', req.body);
+
+  if (!gioiHanTien || !nam || !tenDanhMuc) {
+    return res.status(400).json({ message: 'gioiHanTien, nam và tenDanhMuc là bắt buộc' });
+  }
+
+  gioiHanTien = Number(gioiHanTien);
+  nam = Number(nam);
+  thang = thang != null ? Number(thang) : null;
+
+  if (isNaN(gioiHanTien) || isNaN(nam) || (thang !== null && isNaN(thang))) {
+    return res.status(400).json({ message: 'gioiHanTien, nam, thang phải là số hợp lệ' });
+  }
 
   try {
-    const [dmResults] = await db.query('SELECT maDanhMuc FROM danhMuc WHERE tenDanhMuc = ?', [tenDanhMuc]);
+    const [dmResults] = await db.query(
+      'SELECT maDanhMuc FROM danhMuc WHERE tenDanhMuc = ?',
+      [tenDanhMuc.trim()]
+    );
     if (dmResults.length === 0) return res.status(404).json({ message: 'Danh mục không tồn tại' });
 
     const maDanhMuc = dmResults[0].maDanhMuc;
+
     const sqlUpdate = `
-      UPDATE ngansach 
+      UPDATE ngansach
       SET gioiHanTien = ?, thang = ?, nam = ?, maDanhMuc = ?
       WHERE maNganSach = ?
     `;
-    const [result] = await db.query(sqlUpdate, [gioiHanTien, thang || null, nam, maDanhMuc, maNganSach]);
+    const [result] = await db.query(sqlUpdate, [gioiHanTien, thang, nam, maDanhMuc, maNganSach]);
+
     if (result.affectedRows === 0) return res.status(404).json({ message: 'Không tìm thấy ngân sách để cập nhật' });
 
     res.status(200).json({ message: 'Cập nhật ngân sách thành công' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Lỗi cập nhật ngân sách:', err); // log lỗi chi tiết
+    res.status(500).json({ message: 'Lỗi server, vui lòng thử lại sau' });
   }
 });
+
 
 // Xóa ngân sách
 app.delete('/ngansach/:id', async (req, res) => {
