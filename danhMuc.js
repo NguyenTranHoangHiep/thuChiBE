@@ -11,10 +11,11 @@ app.use(express.json());
 
 // ================== KẾT NỐI DATABASE ==================
 const db = mysql.createPool({
-  host: 'sql12.freesqldatabase.com',
-  user: 'sql12808282',
-  password: 'ssJaXSuIdK',
-  database: 'sql12808282',
+  host: 'yamanote.proxy.rlwy.net',   // host Railway
+  user: 'root',                       // user Railway
+  password: 'CLEVyJEUlkSuEPmnXPLwwYPOHFdUSnqt', // password Railway
+  database: 'thuchi',                // database Railway
+  port: 46333,                        // port Railway
   waitForConnections: true,
   connectionLimit: 10
 });
