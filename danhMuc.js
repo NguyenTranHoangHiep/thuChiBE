@@ -21,6 +21,23 @@ const db = mysql.createPool({
 });
 
 console.log('MySQL pool ready');
+//=================== START SERVER  tự ping khi sever auto sleep==================
+// Health check
+app.get("/health", (req, res) => {
+  res.send("OK");
+});
+
+// Tự ping server
+setInterval(() => {
+  fetch("https://thuchibe.onrender.com/health")
+    .catch(() => {});
+}, 1000 * 60 * 5);
+
+// Start server
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
+
 
 // ================== API DANH MỤC ==================
 app.get('/danhmuc', async (req, res) => {
